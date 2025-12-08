@@ -1,1 +1,4 @@
-
+- Implémenter des variations de vitesse (accélération)
+- Implémenter des obstacles et des évitements (dynamique ?)
+- Implémenter une frontière d'intéraction linéaire/quadratique
+- Passer au modèle 3D (place prise par l'oiseau non ponctuelle)
