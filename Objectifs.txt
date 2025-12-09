@@ -2,3 +2,4 @@
 - Implémenter des obstacles et des évitements (dynamique ?)
 - Implémenter une frontière d'intéraction linéaire/quadratique
 - Passer au modèle 3D (place prise par l'oiseau non ponctuelle)
+- Modèle topologique : les étourneaux sont entourés de 7 oiseaux ==> densité différente aux bords et plus forte corrélation de vol au bord
