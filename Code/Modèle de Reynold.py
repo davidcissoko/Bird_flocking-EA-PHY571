@@ -1,23 +1,30 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import taichi as ti
+ti.init(arch=ti.gpu)
 # ----------------------------------
 # PARAMÈTRES
 # ----------------------------------
 
-N = 200
-WIDTH, HEIGHT = 60, 60
+N = 120
+WIDTH, HEIGHT = 20, 20
 dt = 0.1
 
 # Paramètres de Reynolds
-NEIGHBOR_RADIUS = 4.0
-DESIRED_SEPARATION = 0.6
-MAX_SPEED = 2.0
-MAX_FORCE = 0.2   # accélération max
-T=1000  # nombre d'itérations
+NEIGHBOR_RADIUS = 3.5
+DESIRED_SEPARATION = 0.7
+ALiGNMENT_RADIUS = 2.5
+Avoidance_RADIUS = 2.0
+MAX_SPEED = 1.5
+MAX_FORCE = 0.08  # accélération max
+#poids des différents comportements
+W_SEPARATION = 1.5
+W_ALIGNMENT = 1
+W_COHESION = 0.8
+W_AVOIDANCE = 2.0
+T=500  # nombre d'itérations
 # Obstacles circulaires
 obstacles = [
-    (30, 30, 5.0),
     
 ]
 
@@ -46,7 +53,7 @@ class Boid:
         angle = np.random.uniform(0, 2*np.pi)
         self.vel = np.array([np.cos(angle), np.sin(angle)], dtype=float)
 
-    # --- comportement 1 : séparation ---
+    # --- comportement 1 : évitement ---
     def separation(self, boids):
         steer = np.zeros(2)
         count = 0
@@ -67,7 +74,7 @@ class Boid:
         count = 0
         for other in boids:
             d = distance(self.pos, other.pos)
-            if 0 < d < NEIGHBOR_RADIUS:
+            if 0 < d < ALiGNMENT_RADIUS:
                 avg_vel += other.vel
                 count += 1
         if count == 0:
@@ -100,32 +107,25 @@ class Boid:
         for (ox, oy, R) in obstacles:
             op = np.array([ox, oy])
             d = distance(self.pos, op)
-            if d < R + 2.0:
+            if d < R + Avoidance_RADIUS:
                 # vecteur de fuite
                 away = (self.pos - op)
-                steer += away / (d**2 + 1e-6)
+                steer += away
+               # steer += away / (d**2 + 1e-6)
         return limit(steer, MAX_FORCE * 2)
 
-    # --- mise à jour complète ---
-    def update(self, boids):
-        # Priorité 0 : obstacles
-        force = self.avoid_obstacles()
-        if np.linalg.norm(force) < 1e-6:  # sinon = obstacle impératif
-            # Priorité 1 : séparation
-            sep = self.separation(boids)
-            if np.linalg.norm(sep) > 0:
-                force = sep
-            else:
-                # Priorité 2 : alignement
-                ali = self.alignment(boids)
-                # Priorité 3 : cohésion
-                coh = self.cohesion(boids)
-                force = ali + coh
-
-        force = limit(force, MAX_FORCE)
-
+  
+    def update(self,boids):
+        # Les trois comportements s'additionnent TOUJOURS
+        sep = self.separation(boids)
+        ali = self.alignment(boids)
+        coh = self.cohesion(boids)
+        # Évitement des obstacles (prioritaire)
+        avoid = self.avoid_obstacles()
+        force = W_SEPARATION*sep+W_ALIGNMENT*ali + W_COHESION*coh+ W_AVOIDANCE*avoid
+      
         self.vel += force
-        self.vel = limit(self.vel, MAX_SPEED)
+        self.vel = limit(self.vel, MAX_SPEED) 
 
         self.pos += self.vel * dt
 
